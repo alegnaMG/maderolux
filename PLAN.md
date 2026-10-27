@@ -68,18 +68,18 @@ Estructura lista: todo el contenido vive en `src/lib/data/` y meter los datos re
 
 #### Datos que hay que pedirle a Lucía
 
-| Dato                                                                                      | Dónde va                                                     |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Email (WhatsApp 613 569 064 e Instagram @maderolux_madrid ya son los reales)              | `src/lib/data/contacto.ts` (**el email actual es supuesto**) |
-| Logo en SVG o PNG ≥ 600 px (el de `public/logo.jpg` mide 150 px)                          | `public/` + `src/components/sello.tsx`                       |
-| Otros tratamientos que ofrece, además de la maderoterapia                                 | `src/lib/data/tratamientos.ts`                               |
-| Validar el borrador de maderoterapia (texto, pasos de la sesión, contraindicaciones, FAQ) | `src/lib/data/tratamientos.ts`                               |
-| Duración de la sesión                                                                     | `duracionMinutos` en `tratamientos.ts`                       |
-| ¿Qué lleva ella y qué necesita la clienta en casa? (¿camilla?)                            | respuesta de la FAQ en `tratamientos.ts`                     |
-| Precios de sesión suelta y bonos; ¿son esos bonos?                                        | `src/lib/data/tarifas.ts`                                    |
-| Suplemento por desplazamiento y formas de pago                                            | `tarifas.ts`                                                 |
-| Distritos y municipios que cubre                                                          | `src/lib/data/cobertura.ts` (+ `confirmada: true`)           |
-| Presentación en primera persona y formación                                               | `src/lib/data/sobre-mi.ts`                                   |
+| Dato                                                                                      | Dónde va                                                                                          |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Email (WhatsApp 613 569 064 e Instagram @maderolux_madrid ya son los reales)              | `src/lib/data/contacto.ts` (**el email actual es supuesto**)                                      |
+| Logo en SVG o PNG ≥ 600 px (el de `public/logo.jpg` mide 150 px)                          | `public/` + `src/components/sello.tsx` (y volver a ejecutar `node scripts/generar-opengraph.mjs`) |
+| Otros tratamientos que ofrece, además de la maderoterapia                                 | `src/lib/data/tratamientos.ts`                                                                    |
+| Validar el borrador de maderoterapia (texto, pasos de la sesión, contraindicaciones, FAQ) | `src/lib/data/tratamientos.ts`                                                                    |
+| Duración de la sesión                                                                     | `duracionMinutos` en `tratamientos.ts`                                                            |
+| ¿Qué lleva ella y qué necesita la clienta en casa? (¿camilla?)                            | respuesta de la FAQ en `tratamientos.ts`                                                          |
+| Precios de sesión suelta y bonos; ¿son esos bonos?                                        | `src/lib/data/tarifas.ts`                                                                         |
+| Suplemento por desplazamiento y formas de pago                                            | `tarifas.ts`                                                                                      |
+| Distritos y municipios que cubre                                                          | `src/lib/data/cobertura.ts` (+ `confirmada: true`)                                                |
+| Presentación en primera persona y formación                                               | `src/lib/data/sobre-mi.ts`                                                                        |
 
 #### Fotos: cómo prepararlas
 

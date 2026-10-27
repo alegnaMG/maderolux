@@ -42,7 +42,7 @@ export const FOTOS = {
   esencia: {
     pendiente: 'Maderoterapia con copa de madera',
     foto: {
-      src: '/fotos/maderoterapia-copa.webp',
+      src: '/fotos/maderoterapia-copa-espalda.webp',
       alt: 'Copa de madera deslizándose sobre la espalda durante una sesión',
       ia: true,
     },

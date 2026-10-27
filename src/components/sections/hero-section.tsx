@@ -25,7 +25,10 @@ export function HeroSection({
           fill
           preload
           sizes="100vw"
-          className="-z-20 object-cover"
+          // En vertical solo cabe una franja de la panorámica: centrada caía
+          // sobre la bata blanca y el titular claro no se leía. Al 32 % quedan
+          // la mano y el rodillo sobre un fondo oscuro.
+          className="-z-20 object-cover object-[32%_center] lg:object-center"
         />
       ) : (
         <div
@@ -33,9 +36,11 @@ export function HeroSection({
           className="absolute inset-0 -z-20 microcemento-oscuro"
         />
       )}
+      {/* Velo: uniforme hasta lg, porque el texto ocupa todo el ancho; en
+          escritorio, degradado que oscurece solo la mitad del texto. */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-linear-to-r from-oscuro via-oscuro/70 to-oscuro/10"
+        className="absolute inset-0 -z-10 bg-oscuro/70 lg:bg-transparent lg:bg-linear-to-r lg:from-oscuro lg:via-oscuro/70 lg:to-oscuro/10"
       />
 
       {/* Alto acotado (40rem como mucho) y texto centrado: ocupar toda la

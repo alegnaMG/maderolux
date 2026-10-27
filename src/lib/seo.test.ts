@@ -27,13 +27,27 @@ describe('SITE_URL', () => {
 
 describe('SITE_OG_DEFAULTS', () => {
   it('expone los valores por defecto de Open Graph del sitio', async () => {
-    const { SITE_OG_DEFAULTS } = await import('./seo');
+    const { IMAGEN_COMPARTIR, SITE_OG_DEFAULTS } = await import('./seo');
 
     expect(SITE_OG_DEFAULTS).toEqual({
       siteName: 'Maderolux',
       locale: 'es_ES',
       type: 'website',
+      images: [IMAGEN_COMPARTIR],
     });
+  });
+});
+
+describe('IMAGEN_COMPARTIR', () => {
+  it('es la imagen de 1200×630 que genera el script, con texto alternativo', async () => {
+    const { IMAGEN_COMPARTIR } = await import('./seo');
+
+    expect(IMAGEN_COMPARTIR).toMatchObject({
+      url: '/opengraph.jpg',
+      width: 1200,
+      height: 630,
+    });
+    expect(IMAGEN_COMPARTIR.alt).toContain('Maderolux');
   });
 });
 
@@ -47,7 +61,7 @@ describe('withBrand', () => {
 
 describe('pageMetadata', () => {
   it('genera title, canonical, Open Graph y Twitter coherentes para la ruta', async () => {
-    const { pageMetadata } = await import('./seo');
+    const { IMAGEN_COMPARTIR, pageMetadata } = await import('./seo');
 
     expect(
       pageMetadata({
@@ -66,11 +80,13 @@ describe('pageMetadata', () => {
         siteName: 'Maderolux',
         locale: 'es_ES',
         type: 'website',
+        images: [IMAGEN_COMPARTIR],
       },
       twitter: {
         title: 'Tarifas | Maderolux',
         description: 'Precios de las sesiones.',
         card: 'summary_large_image',
+        images: [IMAGEN_COMPARTIR],
       },
     });
   });
