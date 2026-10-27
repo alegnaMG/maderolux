@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- La rama del sello (src/components/sello.tsx), simplificada y con las
+       hojas rellenas para que se lea a 16px. -->
+  <circle cx="32" cy="32" r="32" fill="#6B4630"/>
+  <g fill="#F4EBDF" stroke="#F4EBDF" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(0.46) translate(-100 -92)">
+    <path d="M100 138 C 99 118 99 92 101 66" fill="none" stroke-width="5"/>
+    <path d="M100 124 C 92 122 84 116 80 106 C 89 108 96 114 100 124 Z" stroke-width="2"/>
+    <path d="M100 112 C 108 110 116 104 120 94 C 111 96 104 102 100 112 Z" stroke-width="2"/>
+    <path d="M100 99 C 93 97 86 91 83 82 C 91 84 97 90 100 99 Z" stroke-width="2"/>
+    <path d="M100.5 87 C 107 85 113 79 116 71 C 109 73 103 79 100.5 87 Z" stroke-width="2"/>
+    <path d="M101 66 C 97 60 97 53 101 47 C 105 53 105 60 101 66 Z" stroke-width="2"/>
+  </g>
+</svg>

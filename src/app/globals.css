@@ -1,0 +1,178 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+/* Los componentes de shadcn traen variantes dark:. Atarlas a una clase .dark
+   (que nunca ponemos) evita que se activen por el modo oscuro del sistema:
+   la identidad de Maderolux es de un solo tema. */
+@custom-variant dark (&:is(.dark *));
+
+/* Puente entre los tokens de :root y las utilidades de Tailwind
+   (bg-background, text-muted-foreground…). Un token nuevo se declara en
+   :root y se mapea aquí; nunca colores arbitrarios en los componentes. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-oscuro: var(--oscuro);
+  --color-oscuro-foreground: var(--oscuro-foreground);
+  --color-miel: var(--miel);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* Escala tipográfica. Cada tamaño trae su interlineado y su tracking, así
+   `text-titulo` basta y no hay que repetir leading-/tracking- en cada uso. */
+@theme {
+  --text-display: clamp(3.25rem, 1.9rem + 5.6vw, 7rem);
+  --text-display--line-height: 0.92;
+  --text-display--letter-spacing: -0.015em;
+  --text-titulo: clamp(2.75rem, 1.9rem + 3.4vw, 4.75rem);
+  --text-titulo--line-height: 0.98;
+  --text-titulo--letter-spacing: -0.01em;
+  --text-etiqueta: 0.75rem;
+  --text-etiqueta--line-height: 1.6;
+  --text-etiqueta--letter-spacing: 0.24em;
+}
+
+/*
+ * Paleta "madera", sacada del mockup (docs/referencia/mockup-home.jpg) y
+ * aclarada hacia el caramelo:
+ *   Lino      #F7F0E6  fondo
+ *   Papel     #FBF7F1  superficies elevadas (tarjetas)
+ *   Arena     #EFE3D2  bandas y zonas secundarias
+ *   Borde     #E3D3BF  líneas finas
+ *   Miel      #C49162  solo decoración (filetes, viñetas): no apto para texto
+ *   Caramelo  #8C5D3A  CTA principal y acentos (5:1 con Lino)
+ *   Chocolate #45301F  secciones oscuras (10.9:1 con Lino)
+ *   Corteza   #6E5646  texto secundario (6:1 sobre Lino, 5.4:1 sobre Arena)
+ *   Ébano     #2E1D14  texto (14.3:1 sobre Lino)
+ */
+:root {
+  --background: oklch(0.958 0.015 77.1);
+  --foreground: oklch(0.25 0.031 48.7);
+  --card: oklch(0.978 0.009 78.3);
+  --card-foreground: oklch(0.25 0.031 48.7);
+  --popover: oklch(0.958 0.015 77.1);
+  --popover-foreground: oklch(0.25 0.031 48.7);
+  --primary: oklch(0.521 0.079 56.6);
+  --primary-foreground: oklch(0.958 0.015 77.1);
+  --secondary: oklch(0.921 0.026 76.8);
+  --secondary-foreground: oklch(0.25 0.031 48.7);
+  --muted: oklch(0.921 0.026 76.8);
+  --muted-foreground: oklch(0.473 0.04 55.2);
+  --accent: oklch(0.921 0.026 76.8);
+  --accent-foreground: oklch(0.25 0.031 48.7);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.875 0.032 73.5);
+  --input: oklch(0.875 0.032 73.5);
+  --ring: oklch(0.521 0.079 56.6);
+  --oscuro: oklch(0.329 0.041 59.7);
+  --oscuro-foreground: oklch(0.958 0.015 77.1);
+  --miel: oklch(0.695 0.088 63.2);
+  --radius: 0.625rem;
+}
+
+/* Texturas de microcemento (public/texturas/, generadas por
+   scripts/generar-microcemento.mjs). La clara solo va en huecos de foto: sus
+   manchas bajarían el texto secundario de AA. La oscura aguanta texto Lino
+   (≥ 6.5:1 en su zona más clara) y es el fondo de las secciones oscuras. */
+@utility microcemento {
+  background: var(--muted) url('/texturas/microcemento-claro.webp') center /
+    cover no-repeat;
+}
+
+@utility microcemento-oscuro {
+  background: var(--oscuro) url('/texturas/microcemento-oscuro.webp') center /
+    cover no-repeat;
+}
+
+/*
+ * Transiciones al hacer scroll, solo con CSS (scroll-driven animations): la
+ * animación avanza con la posición del elemento en pantalla, sin JavaScript.
+ * Donde el navegador no lo soporta, o con "reducir movimiento" activado, el
+ * contenido simplemente aparece quieto.
+ *   revelar → sube y aparece al entrar en pantalla
+ *   acercar → la foto se asienta (de 108% a 100%) mientras entra
+ */
+@keyframes revelar {
+  from {
+    opacity: 0;
+    translate: 0 2.5rem;
+  }
+}
+
+@keyframes acercar {
+  from {
+    scale: 1.08;
+  }
+}
+
+@utility revelar {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: revelar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+  }
+}
+
+@utility acercar {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: acercar linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 50%;
+    }
+  }
+}
+
+/* Rejilla de 4 columnas: márgenes laterales fluidos + dos mitades de 36rem.
+   Permite que una mitad llegue al borde de la pantalla ("sangrado") mientras
+   la otra queda alineada con el contenido del resto de la página. */
+@utility grid-sangrado {
+  grid-template-columns:
+    [borde-inicio] minmax(1.5rem, 1fr)
+    [contenido-inicio] minmax(0, 36rem)
+    [mitad] minmax(0, 36rem)
+    [contenido-fin] minmax(1.5rem, 1fr)
+    [borde-fin];
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply scroll-smooth font-sans;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
