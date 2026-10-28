@@ -1,4 +1,11 @@
-import { act, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,8 +15,15 @@ import { NAV_LINKS } from '@/lib/data/navegacion';
 import { Header } from './header';
 
 const usePathname = vi.hoisted(() => vi.fn<() => string>());
+// La animación en sí se prueba en lib/scroll-suave.test.ts; aquí solo importa
+// cuándo y hacia dónde se pide.
+const scrollSuave = vi.hoisted(() => ({
+  scrollSuaveHasta: vi.fn(),
+  scrollSuaveAElemento: vi.fn(),
+}));
 
 vi.mock('next/navigation', () => ({ usePathname }));
+vi.mock('@/lib/scroll-suave', () => scrollSuave);
 
 // El stub genérico de vitest.setup.ts; capturarScrollSpy lo sustituye en
 // algunos tests y hay que devolverlo para los siguientes.
@@ -21,6 +35,9 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.stubGlobal('IntersectionObserver', IntersectionObserverDelSetup);
+  scrollSuave.scrollSuaveHasta.mockClear();
+  scrollSuave.scrollSuaveAElemento.mockClear();
+  window.history.replaceState(null, '', '/');
   document.body.innerHTML = '';
 });
 
@@ -89,20 +106,17 @@ describe('Header', () => {
 
   it('en la home, el logo sube al inicio sin navegar y limpia el #', async () => {
     const user = userEvent.setup();
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     window.history.replaceState(null, '', '/#contacto');
     render(<Header />);
 
     await user.click(screen.getByRole('link', { name: 'Maderolux' }));
 
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+    expect(scrollSuave.scrollSuaveHasta).toHaveBeenCalledWith(0);
     expect(window.location.hash).toBe('');
-    scrollTo.mockRestore();
   });
 
   it('con Ctrl+clic o fuera de la home, el logo se comporta como enlace normal', async () => {
     const user = userEvent.setup();
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
     const { unmount } = render(<Header />);
 
     await user.keyboard('{Control>}');
@@ -114,8 +128,64 @@ describe('Header', () => {
     render(<Header />);
     await user.click(screen.getByRole('link', { name: 'Maderolux' }));
 
-    expect(scrollTo).not.toHaveBeenCalled();
-    scrollTo.mockRestore();
+    expect(scrollSuave.scrollSuaveHasta).not.toHaveBeenCalled();
+  });
+
+  it('en la home, una opción del menú anima el scroll hasta su sección sin navegar', () => {
+    const [, tarifas] = montarSecciones('inicio', 'tarifas');
+    render(<Header />);
+
+    const link = within(navPrincipal()).getByRole('link', { name: 'Tarifas' });
+    // fireEvent.click devuelve false si el clic se canceló (preventDefault).
+    const sinCancelar = fireEvent.click(link);
+
+    expect(sinCancelar).toBe(false);
+    expect(scrollSuave.scrollSuaveAElemento).toHaveBeenCalledWith(tarifas);
+    expect(window.location.hash).toBe('#tarifas');
+  });
+
+  it('al saltar a una sección le da el foco para que el Tab siga desde ahí', () => {
+    const [, tarifas] = montarSecciones('inicio', 'tarifas');
+    render(<Header />);
+
+    fireEvent.click(
+      within(navPrincipal()).getByRole('link', { name: 'Tarifas' }),
+    );
+
+    expect(tarifas).toHaveFocus();
+    expect(tarifas).toHaveAttribute('tabindex', '-1');
+  });
+
+  it('si la sección no está en la página, la opción del menú sigue su curso normal', () => {
+    render(<Header />);
+
+    const sinCancelar = fireEvent.click(
+      within(navPrincipal()).getByRole('link', { name: 'Tarifas' }),
+    );
+
+    expect(sinCancelar).toBe(true);
+    expect(scrollSuave.scrollSuaveAElemento).not.toHaveBeenCalled();
+  });
+
+  it('con Ctrl+clic o fuera de la home, las opciones del menú son enlaces normales', () => {
+    montarSecciones('inicio', 'tarifas');
+    const { unmount } = render(<Header />);
+
+    const conCtrl = fireEvent.click(
+      within(navPrincipal()).getByRole('link', { name: 'Tarifas' }),
+      { ctrlKey: true },
+    );
+    unmount();
+
+    usePathname.mockReturnValue('/cobertura');
+    render(<Header />);
+    const fueraDeLaHome = fireEvent.click(
+      within(navPrincipal()).getByRole('link', { name: 'Tarifas' }),
+    );
+
+    expect(conCtrl).toBe(true);
+    expect(fueraDeLaHome).toBe(true);
+    expect(scrollSuave.scrollSuaveAElemento).not.toHaveBeenCalled();
   });
 
   it('en la home, cada opción del menú salta a su sección', () => {
@@ -259,5 +329,74 @@ describe('Header', () => {
     await user.click(within(menu).getByRole('link', { name: 'Contacto' }));
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(scrollSuave.scrollSuaveAElemento).not.toHaveBeenCalled();
+  });
+
+  it('en la home, el menú móvil salta a la sección cuando el panel termina de cerrarse', async () => {
+    const user = userEvent.setup();
+    const [, tarifas] = montarSecciones('inicio', 'tarifas');
+    render(<Header />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú' }));
+    const menu = await screen.findByRole('dialog');
+    await user.click(within(menu).getByRole('link', { name: 'Tarifas' }));
+
+    await waitFor(() =>
+      expect(scrollSuave.scrollSuaveAElemento).toHaveBeenCalledWith(tarifas),
+    );
+    expect(scrollSuave.scrollSuaveAElemento).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(window.location.hash).toBe('#tarifas');
+  });
+
+  it('el menú móvil no salta si se cierra sin elegir sección', async () => {
+    const user = userEvent.setup();
+    montarSecciones('inicio', 'tarifas');
+    render(<Header />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú' }));
+    await screen.findByRole('dialog');
+    await user.keyboard('{Escape}');
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(scrollSuave.scrollSuaveAElemento).not.toHaveBeenCalled();
+  });
+
+  it('en el menú móvil, si la sección no está en la página el enlace sigue su curso normal', async () => {
+    const user = userEvent.setup();
+    render(<Header />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú' }));
+    const menu = await screen.findByRole('dialog');
+    const sinCancelar = fireEvent.click(
+      within(menu).getByRole('link', { name: 'Tarifas' }),
+    );
+
+    expect(sinCancelar).toBe(true);
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(scrollSuave.scrollSuaveAElemento).not.toHaveBeenCalled();
+  });
+
+  it('en el menú móvil, Ctrl+clic en una opción es un enlace normal', async () => {
+    const user = userEvent.setup();
+    montarSecciones('inicio', 'tarifas');
+    render(<Header />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir menú' }));
+    const menu = await screen.findByRole('dialog');
+    const sinCancelar = fireEvent.click(
+      within(menu).getByRole('link', { name: 'Tarifas' }),
+      { ctrlKey: true },
+    );
+
+    expect(sinCancelar).toBe(true);
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(scrollSuave.scrollSuaveAElemento).not.toHaveBeenCalled();
   });
 });

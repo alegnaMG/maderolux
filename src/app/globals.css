@@ -169,6 +169,12 @@
   html {
     @apply scroll-smooth font-sans;
   }
+  /* El menú da foco (tabindex=-1) a la sección a la que salta, como haría un
+     ancla nativa, para que el siguiente Tab siga desde ahí. Una sección no es
+     interactiva: el anillo de foco sobre toda ella sería ruido. */
+  main [id][tabindex='-1']:focus {
+    outline: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

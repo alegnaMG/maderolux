@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MenuIcon } from 'lucide-react';
@@ -8,6 +8,7 @@ import { MenuIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CONTACTO, WHATSAPP_URL } from '@/lib/data/contacto';
 import { NAV_LINKS } from '@/lib/data/navegacion';
+import { scrollSuaveAElemento, scrollSuaveHasta } from '@/lib/scroll-suave';
 import { CtaLink } from '@/components/cta-link';
 import { InstagramIcon } from '@/components/icons/instagram-icon';
 import { Logo } from '@/components/logo';
@@ -22,11 +23,23 @@ import {
 
 type NavLink = (typeof NAV_LINKS)[number];
 
+// Ctrl/Cmd/Mays/Alt+clic o clic central (abrir en pestaña nueva, etc.) tienen
+// que seguir funcionando como enlace; solo el clic normal lo gestionamos.
+const esClicNormal = (event: MouseEvent<HTMLAnchorElement>) =>
+  event.button === 0 &&
+  !event.metaKey &&
+  !event.ctrlKey &&
+  !event.shiftKey &&
+  !event.altKey;
+
 export function Header() {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const [activeSection, setActiveSection] = useState('inicio');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Sección elegida en el menú móvil, a la espera de que el panel termine de
+  // cerrarse para saltar a ella (ver irASeccionDesdeMenuMovil).
+  const seccionPendiente = useRef<string | null>(null);
 
   // Scroll-spy: en la home cada opción del menú es una sección de la misma
   // página, y se marca la que cruza la línea central de la pantalla.
@@ -63,17 +76,54 @@ export function Header() {
     isActive(link) ? (isHome ? 'true' : 'page') : undefined;
 
   // En la home, un <Link href="/"> apunta a la URL actual y Next no hace
-  // nada, así que el logo sube a mano. scrollTo sin `behavior` usa el
-  // scroll-behavior del CSS: suave, o instantáneo con movimiento reducido.
-  // Ctrl/Cmd+clic (abrir en pestaña nueva) sigue funcionando como enlace.
+  // nada, así que el logo sube a mano.
   const subirAlInicio = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!isHome || event.button !== 0) return;
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-      return;
+    if (!isHome || !esClicNormal(event)) return;
     event.preventDefault();
-    window.scrollTo({ top: 0 });
+    scrollSuaveHasta(0);
     // Quita el #seccion que hubiera dejado el menú.
     window.history.replaceState(null, '', '/');
+  };
+
+  // En la home el menú anima el scroll nosotros (lib/scroll-suave) en vez de
+  // dejar el salto al ancla: el scroll suave del CSS tiene la duración y la
+  // curva del navegador, y entre secciones de una pantalla sale seco. Al
+  // cancelar el ancla nativa también se pierde que el siguiente Tab continúe
+  // desde la sección, así que se le da el foco (sin scroll, ya lo anima el
+  // script). Con la sección ausente el enlace sigue su curso normal.
+  const desplazarASeccion = (id: string) => {
+    const seccion = document.getElementById(id);
+    if (!seccion) return false;
+    seccion.tabIndex = -1;
+    seccion.focus({ preventScroll: true });
+    scrollSuaveAElemento(seccion);
+    window.history.replaceState(null, '', `#${id}`);
+    return true;
+  };
+
+  const irASeccion = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+    if (!isHome || !esClicNormal(event)) return;
+    if (desplazarASeccion(id)) event.preventDefault();
+  };
+
+  // En el menú móvil no se salta en el clic: mientras el panel está abierto
+  // Base UI bloquea el scroll de la página y, al cerrarlo, la devuelve a donde
+  // estaba al abrirlo, lo que pisaría la animación. Se espera a que termine de
+  // cerrarse (onOpenChangeComplete).
+  const irASeccionDesdeMenuMovil = (
+    event: MouseEvent<HTMLAnchorElement>,
+    id: string,
+  ) => {
+    setMobileNavOpen(false);
+    if (!isHome || !esClicNormal(event) || !document.getElementById(id)) return;
+    event.preventDefault();
+    seccionPendiente.current = id;
+  };
+
+  const alTerminarDeCambiarElMenuMovil = (abierto: boolean) => {
+    const id = seccionPendiente.current;
+    seccionPendiente.current = null;
+    if (!abierto && id !== null) desplazarASeccion(id);
   };
 
   return (
@@ -93,6 +143,7 @@ export function Header() {
               <li key={link.id}>
                 <Link
                   href={hrefFor(link)}
+                  onClick={(event) => irASeccion(event, link.id)}
                   aria-current={ariaCurrent(link)}
                   className={cn(
                     // Subrayado fino que crece desde la izquierda: marca la
@@ -133,7 +184,11 @@ export function Header() {
             Reservar por WhatsApp
           </CtaLink>
 
-          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <Sheet
+            open={mobileNavOpen}
+            onOpenChange={setMobileNavOpen}
+            onOpenChangeComplete={alTerminarDeCambiarElMenuMovil}
+          >
             <SheetTrigger
               render={
                 <Button
@@ -163,7 +218,9 @@ export function Header() {
                     >
                       <Link
                         href={hrefFor(link)}
-                        onClick={() => setMobileNavOpen(false)}
+                        onClick={(event) =>
+                          irASeccionDesdeMenuMovil(event, link.id)
+                        }
                         aria-current={ariaCurrent(link)}
                         className={cn(
                           'block py-1 font-heading text-4xl font-light transition-colors hover:text-foreground',
